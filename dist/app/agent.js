@@ -37,10 +37,12 @@ exports.AgentBuilder = AgentBuilder;
 class Agent {
     constructor(builder) {
         var _a;
+        this.interceptors = [];
         this.MAX_LOOP = 30;
         this.toolMap = new Map();
         const apiKey = process.env.OPENAI_API_KEY || "";
         this.openai = new openai_1.default({ apiKey });
+        this.interceptors = [];
         for (const t of builder.toolList || []) {
             this.toolMap.set(t.name, t);
         }
@@ -53,6 +55,14 @@ class Agent {
         ${(_a = builder.toolList) === null || _a === void 0 ? void 0 : _a.map(t => JSON.stringify({ functionName: t.name, functionDescription: t.description, functionDoc: t.doc })).join('\n')}
         `;
         this.messageHistory = [];
+    }
+    attachInterceptor(interceptor) {
+        this.interceptors.push(interceptor);
+    }
+    notifyInterceptors(message) {
+        for (const interceptor of this.interceptors) {
+            interceptor(message);
+        }
     }
     static builder() {
         return new AgentBuilder();
@@ -88,6 +98,7 @@ class Agent {
                 const rawLLMResponse = (_a = llmResponse.choices[0].message) === null || _a === void 0 ? void 0 : _a.content;
                 //Append LLMResponse to messageHistory
                 this.messageHistory.push({ role: 'assistant', content: rawLLMResponse });
+                this.notifyInterceptors({ role: 'assistant', content: rawLLMResponse });
                 //prase LLMResponse to JSON
                 const parsedResult = this.parseAssistantJson(rawLLMResponse);
                 // if LLMResponse.step === "OUTPUT" then break (Stop Condition)
@@ -106,11 +117,13 @@ class Agent {
                     if (!tool)
                         throw new Error(`Tool ${functionName} not found`);
                     const toolResult = yield tool.executer(input);
-                    this.messageHistory.push({ role: 'developer', content: JSON.stringify({
-                            functionName,
-                            input,
-                            toolResult
-                        }) });
+                    const developerMessage = JSON.stringify({
+                        functionName,
+                        input,
+                        toolResult
+                    });
+                    this.messageHistory.push({ role: 'developer', content: developerMessage });
+                    this.notifyInterceptors({ role: 'developer', content: developerMessage });
                 }
             }
         });

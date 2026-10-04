@@ -13,6 +13,7 @@ export interface ITool{
     executer:(input: string) => Promise<string>;
 }
 
+export type interceptor =(message :IMessage) => void;
 export class AgentBuilder {
     public instructions: string | undefined;
     public toolList: ITool[] | undefined;
@@ -45,11 +46,13 @@ export class Agent {
     private toolMap: Map<string, ITool>;
     private openai: OpenAI;
 
+    private interceptors: interceptor[] = [];
     private MAX_LOOP = 30;
     constructor(builder: AgentBuilder) {
         this.toolMap = new Map();
         const apiKey = process.env.OPENAI_API_KEY || "";
         this.openai = new OpenAI({ apiKey });
+        this.interceptors = [];
         for(const t of builder.toolList || []) {
             this.toolMap.set(t.name, t);
         }
@@ -62,6 +65,15 @@ export class Agent {
         ${builder.toolList?.map(t => JSON.stringify({functionName: t.name, functionDescription: t.description, functionDoc: t.doc})).join('\n')}
         `;
         this.messageHistory=[];
+    }
+
+    public attachInterceptor(interceptor: interceptor){
+        this.interceptors.push(interceptor);
+    }
+    private notifyInterceptors(message: IMessage){
+        for(const interceptor of this.interceptors){
+            interceptor(message);
+        }
     }
     static builder(){
         return new AgentBuilder();
@@ -100,6 +112,7 @@ export class Agent {
             const rawLLMResponse: string = llmResponse.choices[0].message?.content as string;
             //Append LLMResponse to messageHistory
             this.messageHistory.push({role:'assistant', content: rawLLMResponse});
+            this.notifyInterceptors({role:'assistant', content: rawLLMResponse});
             //prase LLMResponse to JSON
             const parsedResult = this.parseAssistantJson(rawLLMResponse);
             // if LLMResponse.step === "OUTPUT" then break (Stop Condition)
@@ -116,11 +129,13 @@ export class Agent {
                 const tool = this.toolMap.get(functionName);
                 if(!tool) throw new Error(`Tool ${functionName} not found`);
                 const toolResult = await tool.executer(input);
-                this.messageHistory.push({role:'developer', content: JSON.stringify({
+                const developerMessage = JSON.stringify({
                     functionName,
                     input,
                     toolResult
-                })});
+                });
+                this.messageHistory.push({ role: 'developer', content: developerMessage });
+                this.notifyInterceptors({ role: 'developer', content: developerMessage });
             }
         }
     }

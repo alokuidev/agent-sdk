@@ -73,10 +73,30 @@ export class Agent {
 
 
     public async run(input: string){
+        this.messageHistory.push({role:'user', content: input});
         for(let i = 0; i < this.MAX_LOOP; i++){
             //... LLMResponse = call LLM(Message History + System Prompt);
+            const llmResponse = await this.openai.chat.completions.create({
+                model: "gpt-4o",
+                messages: [
+                    {
+                        role: "system",
+                        content: this.instructions
+                    },
+                    ...this.messageHistory.map(m => ({
+                        role: m.role,
+                        content: m.content
+                    }))
+                ]
+            });
+
+            const rawLLMResponse: string = llmResponse.choices[0].message?.content as string;
             //Append LLMResponse to messageHistory
+            this.messageHistory.push({role:'assistant', content: rawLLMResponse});
+            //prase LLMResponse to JSON
+            const  parsedResult = JSON.parse(rawLLMResponse);
             // if LLMResponse.step === "OUTPUT" then break (Stop Condition)
+            if(parsedResult.step.toLowerCase() === "output") return this.messageHistory;
             // if LLMResponse.step === "TOOL_REQUEST" 
             /*
             * tool = toolMap.find (LLMResponse.functionName)
@@ -84,6 +104,13 @@ export class Agent {
             * Append toolResult to messageHistory
             * Continue loop
             */
+            if(parsedResult.step.toLowerCase() === "tool_request"){
+                const {functionName, input} = parsedResult;
+                const tool = this.toolMap.get(functionName);
+                if(!tool) throw new Error(`Tool ${functionName} not found`);
+                const toolResult = await tool.executer(input);
+                this.messageHistory.push({role:'developer', content: toolResult});
+            }
         }
     }
 }

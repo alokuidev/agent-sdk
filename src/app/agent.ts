@@ -1,5 +1,6 @@
+import "dotenv/config";
 import { HARNESS_PROMPT } from "./config";
-
+import OpenAI from "openai";
 export interface IMessage {
     role: 'system' | 'user' | 'developer' | 'assistant';
     content: string;
@@ -42,9 +43,13 @@ export class Agent {
     private instructions:string
     private messageHistory: IMessage[];
     private toolMap: Map<string, ITool>;
+    private openai: OpenAI;
+
+    private MAX_LOOP = 30;
     constructor(builder: AgentBuilder) {
         this.toolMap = new Map();
-
+        const apiKey = process.env.OPENAI_API_KEY || "";
+        this.openai = new OpenAI({ apiKey });
         for(const t of builder.toolList || []) {
             this.toolMap.set(t.name, t);
         }
@@ -68,7 +73,7 @@ export class Agent {
 
 
     public async run(input: string){
-        while(true){
+        for(let i = 0; i < this.MAX_LOOP; i++){
             //... LLMResponse = call LLM(Message History + System Prompt);
             //Append LLMResponse to messageHistory
             // if LLMResponse.step === "OUTPUT" then break (Stop Condition)

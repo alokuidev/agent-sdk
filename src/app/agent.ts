@@ -1,5 +1,5 @@
 export class AgentBuilder {
-    private instructions: string | undefined;
+    public instructions: string | undefined;
 
     constructor() {}
 
@@ -12,8 +12,19 @@ export class AgentBuilder {
     }
 }
 
+export interface IMessage {
+    role: 'system' | 'user' | 'developer' | 'assistant';
+    content: string;
+}
+
 export class Agent {
-    constructor(builder: AgentBuilder) {}
+
+    private instructions:string
+    private messageHistory: IMessage[] = [];
+    constructor(builder: AgentBuilder) {
+        this.instructions = builder.instructions || '';
+        this.messageHistory=[];
+    }
     static builder(){
         return new AgentBuilder();
     }

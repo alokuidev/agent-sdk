@@ -60,6 +60,12 @@ class Agent {
     printSystemPrompt() {
         console.log(this.instructions);
     }
+    parseAssistantJson(raw) {
+        const trimmed = raw.trim();
+        const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+        const jsonText = fenceMatch ? fenceMatch[1].trim() : trimmed;
+        return JSON.parse(jsonText);
+    }
     run(input) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
@@ -83,7 +89,7 @@ class Agent {
                 //Append LLMResponse to messageHistory
                 this.messageHistory.push({ role: 'assistant', content: rawLLMResponse });
                 //prase LLMResponse to JSON
-                const parsedResult = JSON.parse(rawLLMResponse);
+                const parsedResult = this.parseAssistantJson(rawLLMResponse);
                 // if LLMResponse.step === "OUTPUT" then break (Stop Condition)
                 if (parsedResult.step.toLowerCase() === "output")
                     return this.messageHistory;

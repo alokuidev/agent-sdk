@@ -10,10 +10,22 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const agent_1 = require("./app/agent");
+const weatherTool = {
+    name: 'fetchWeatherInfo',
+    description: 'Fetches current weather information for a given location.',
+    doc: 'fetchWeatherInfo(location: string): Promise<string> - This function takes a location as input and returns a promise that resolves to the current weather information for that location.',
+    executer: (input) => __awaiter(void 0, void 0, void 0, function* () {
+        // Simulate an API call to fetch weather information
+        return `The weather in ${input} is currently sunny.`;
+    })
+};
 function init() {
     return __awaiter(this, void 0, void 0, function* () {
-        const agent = agent_1.Agent.builder().setInstructions(`You are an expert mathematician. You will answer questions about mathematics.`).build();
-        agent.run(`What is the integral of x^2?`);
+        const agent = agent_1.Agent.builder()
+            .setInstructions(`You are an expert mathematician. You will answer questions about mathematics.`)
+            .tool(weatherTool)
+            .build();
+        agent.printSystemPrompt();
     });
 }
 init();

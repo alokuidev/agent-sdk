@@ -13,10 +13,11 @@ const weatherTool: ITool = {
 
 async function init(){
     const agent: Agent = Agent.builder()
-    .setInstructions(`You are an expert mathematician. You will answer questions about mathematics.`)
+    .setInstructions(`You are an expert weather agent.`)
     .tool(weatherTool)
     .build();
-    agent.printSystemPrompt();
+    const result = await agent.run('can you tell me the weather of Goa?');
+    console.log(result);
 }
 
 init();

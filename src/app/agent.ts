@@ -109,7 +109,11 @@ export class Agent {
                 const tool = this.toolMap.get(functionName);
                 if(!tool) throw new Error(`Tool ${functionName} not found`);
                 const toolResult = await tool.executer(input);
-                this.messageHistory.push({role:'developer', content: toolResult});
+                this.messageHistory.push({role:'developer', content: JSON.stringify({
+                    functionName,
+                    input,
+                    toolResult
+                })});
             }
         }
     }

@@ -22,10 +22,11 @@ const weatherTool = {
 function init() {
     return __awaiter(this, void 0, void 0, function* () {
         const agent = agent_1.Agent.builder()
-            .setInstructions(`You are an expert mathematician. You will answer questions about mathematics.`)
+            .setInstructions(`You are an expert weather agent.`)
             .tool(weatherTool)
             .build();
-        agent.printSystemPrompt();
+        const result = yield agent.run('can you tell me the weather of Goa?');
+        console.log(result);
     });
 }
 init();

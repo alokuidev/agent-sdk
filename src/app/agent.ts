@@ -66,7 +66,19 @@ export class Agent {
         console.log(this.instructions);
     }
 
-    public run(input: string){
-        console.log(`Running agent with input: ${input}`);
+
+    public async run(input: string){
+        while(true){
+            //... LLMResponse = call LLM(Message History + System Prompt);
+            //Append LLMResponse to messageHistory
+            // if LLMResponse.step === "OUTPUT" then break (Stop Condition)
+            // if LLMResponse.step === "TOOL_REQUEST" 
+            /*
+            * tool = toolMap.find (LLMResponse.functionName)
+            * toolResult = await tool.executer(LLMResponse.input)
+            * Append toolResult to messageHistory
+            * Continue loop
+            */
+        }
     }
 }

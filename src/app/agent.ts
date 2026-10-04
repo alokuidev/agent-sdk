@@ -1,3 +1,5 @@
+import { HARNESS_PROMPT } from "./config";
+
 export class AgentBuilder {
     public instructions: string | undefined;
 
@@ -20,9 +22,15 @@ export interface IMessage {
 export class Agent {
 
     private instructions:string
-    private messageHistory: IMessage[] = [];
+    private messageHistory: IMessage[];
+
     constructor(builder: AgentBuilder) {
-        this.instructions = builder.instructions || '';
+        this.instructions = `
+        
+        ${HARNESS_PROMPT}\n\n
+        System Prompt: ${builder.instructions}
+
+        `;
         this.messageHistory=[];
     }
     static builder(){
